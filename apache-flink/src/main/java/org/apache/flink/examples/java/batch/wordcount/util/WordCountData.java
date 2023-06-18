@@ -16,7 +16,10 @@
  * limitations under the License.
  */
 
-package org.apache.flink.streaming.examples.wordcount.util;
+package org.apache.flink.examples.java.batch.wordcount.util;
+
+import org.apache.flink.api.java.DataSet;
+import org.apache.flink.api.java.ExecutionEnvironment;
 
 /**
  * Provides the default data sets used for the WordCount example program. The default data sets are
@@ -62,4 +65,8 @@ public class WordCountData {
                 "The fair Ophelia!--Nymph, in thy orisons",
                 "Be all my sins remember'd."
             };
+
+    public static DataSet<String> getDefaultTextLineDataSet(ExecutionEnvironment env) {
+        return env.fromElements(WORDS);
+    }
 }
