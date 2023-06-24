@@ -1,0 +1,2 @@
+负责管理Dispatcher生命周期，同时提 供了对JobGraph的任务恢复管理功能。如果基于ZooKeeper实现了集群 高可用，DispatcherLeader-Process会将提交的JobGraph存储在ZooKeeper 中，当集群停止或者出现异常时，就会通过DispatcherLeaderProcess对集 群中的JobGraph进行恢复，这些JobGraph都会被存储在JobGraphStore的 实现类中。
+

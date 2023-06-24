@@ -1,0 +1,2 @@
+主要基于Dispatcher实现的 GatewayService，用于获取DispatcherGateway。
+

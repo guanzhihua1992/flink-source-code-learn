@@ -1,0 +1,1 @@
+通过实现jobLeaderIdListeners实时监听 JobManager的运行状态，以获取集群启动的作业对应的JobLeaderId信 息，防止出现JobManager无法连接的情况
