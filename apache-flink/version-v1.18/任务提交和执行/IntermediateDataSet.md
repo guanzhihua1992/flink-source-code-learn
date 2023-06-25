@@ -1,0 +1,1 @@
+IntermediateDataSet表示当前Job节点对应输出的数据集类型。
