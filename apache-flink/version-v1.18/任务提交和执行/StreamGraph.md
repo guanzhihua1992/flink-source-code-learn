@@ -1,0 +1,1 @@
+StreamGraph streamGraph = getStreamGraph();
