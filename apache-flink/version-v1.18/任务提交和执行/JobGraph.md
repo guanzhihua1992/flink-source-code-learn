@@ -1,0 +1,6 @@
+1)用户通过API编写应用程序，将可执行JAR包通过客户端提交到 集群中运行，此时在客户端将DataStream转换操作集合保存至 StreamExecutionEnvironment的Transformation集合。
+2)通过StreamGraphGenerator对象将Transformation集合转换为 StreamGraph。
+3)在PipelineExector中将StreamGraph对象转换成JobGraph数据 结构。JobGraph结构是所有类型客户端和集群之间的任务提交协议， 不管是哪种类型的Flink应用程序，最终都会转换成JobGraph提交到集 群运行时中运行。
+4)集群运行时接收到JobGraph之后，会通过JobGraph创建和启动 相应的JobManager服务，并在JobManager服务中将JobGraph转换为 ExecutionGraph。
+5)JobManager会根据ExecutionGraph中的节点进行调度，实际上 就是将具体的Task部署到TaskManager中进行调度和执行。
+
