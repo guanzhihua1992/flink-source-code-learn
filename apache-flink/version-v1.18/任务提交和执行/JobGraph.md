@@ -223,7 +223,89 @@ private ClusterClientProvider<ApplicationId> deployInternal(
 }
 ```
 
-startAppMaster()启动 几百行代码 不贴了 可以细看
+startAppMaster()启动 几百行代码 不贴了 可以细看 
+
+回头看下AbstractSessionClusterExecutor的execute()
+
+```java
+@Override
+public CompletableFuture<JobClient> execute(
+        @Nonnull final Pipeline pipeline,
+        @Nonnull final Configuration configuration,
+        @Nonnull final ClassLoader userCodeClassloader)
+        throws Exception {
+  //调用getJobGraph()方法获取JobGraph，实际上就是调用 FlinkPipelineTranslationUtil.getJobGraph()方法获取JobGraph。
+    final JobGraph jobGraph =
+            PipelineExecutorUtils.getJobGraph(pipeline, configuration, userCodeClassloader);
+
+    try (final ClusterDescriptor<ClusterID> clusterDescriptor =
+            clusterClientFactory.createClusterDescriptor(configuration)) {
+        final ClusterID clusterID = clusterClientFactory.getClusterId(configuration);
+        checkState(clusterID != null);
+
+        final ClusterClientProvider<ClusterID> clusterClientProvider =
+                clusterDescriptor.retrieve(clusterID);
+        ClusterClient<ClusterID> clusterClient = clusterClientProvider.getClusterClient();
+        return clusterClient
+                .submitJob(jobGraph)
+                .thenApplyAsync(
+                        FunctionUtils.uncheckedFunction(
+                                jobId -> {
+                                    ClientUtils.waitUntilJobInitializationFinished(
+                                            () -> clusterClient.getJobStatus(jobId).get(),
+                                            () -> clusterClient.requestJobResult(jobId).get(),
+                                            userCodeClassloader);
+                                    return jobId;
+                                }))
+                .thenApplyAsync(
+                        jobID ->
+                                (JobClient)
+                                        new ClusterClientJobClientAdapter<>(
+                                                clusterClientProvider,
+                                                jobID,
+                                                userCodeClassloader))
+                .whenCompleteAsync((ignored1, ignored2) -> clusterClient.close());
+    }
+}
+```
+
+clusterClient.submitJob(jobGraph) RestClusterClient和MiniClusterClient两个
+
+MiniClusterClient
+
+```java
+@Override
+public CompletableFuture<JobID> submitJob(@Nonnull JobGraph jobGraph) {
+    return miniCluster.submitJob(jobGraph).thenApply(JobSubmissionResult::getJobID);
+}
+```
+
+```java
+public CompletableFuture<JobSubmissionResult> submitJob(JobGraph jobGraph) {
+    // When MiniCluster uses the local RPC, the provided JobGraph is passed directly to the
+    // Dispatcher. This means that any mutations to the JG can affect the Dispatcher behaviour,
+    // so we rather clone it to guard against this.
+    final JobGraph clonedJobGraph = InstantiationUtil.cloneUnchecked(jobGraph);
+    checkRestoreModeForChangelogStateBackend(clonedJobGraph);
+    final CompletableFuture<DispatcherGateway> dispatcherGatewayFuture =
+            getDispatcherGatewayFuture();
+    final CompletableFuture<InetSocketAddress> blobServerAddressFuture =
+            createBlobServerAddress(dispatcherGatewayFuture);
+    final CompletableFuture<Void> jarUploadFuture =
+            uploadAndSetJobFiles(blobServerAddressFuture, clonedJobGraph);
+    final CompletableFuture<Acknowledge> acknowledgeCompletableFuture =
+            jarUploadFuture
+                    .thenCombine(
+                            dispatcherGatewayFuture,
+                            (Void ack, DispatcherGateway dispatcherGateway) ->
+                                    dispatcherGateway.submitJob(clonedJobGraph, rpcTimeout))
+                    .thenCompose(Function.identity());
+    return acknowledgeCompletableFuture.thenApply(
+            (Acknowledge ignored) -> new JobSubmissionResult(clonedJobGraph.getJobID()));
+}
+```
+
+dispatcherGateway.submitJob(clonedJobGraph, rpcTimeout)
 
 final JobGraph jobGraph =
             PipelineExecutorUtils.getJobGraph(pipeline, configuration, userCodeClassloader);

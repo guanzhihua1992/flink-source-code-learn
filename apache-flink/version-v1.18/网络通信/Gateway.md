@@ -1,0 +1,5 @@
+几种主要的
+·CheckpointCoordinatorGateway:主要用于在Task执行过程中向 CheckpointCoordinator汇报当前Task的Checkpoint执行情况。
+·FencedRpcGateway:RPC核心服务需要实现的接口，集群中的 Dispatcher等RPC组件都会实现该RpcGateway接口。
+·KvStateLocationOracle:主要用于QueryableState模块根据状态key 获取Key-Value类型状态所在的位置信息。
+·KvStateRegistryGateway:主要用于注册QueryableState模块中需要 用到的Key-Value类型状态，如果状态设定为Queryable类型，会将状态 信息注册在KvStateRegistry中。
