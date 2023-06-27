@@ -610,3 +610,17 @@ private void restoreAndInvoke(TaskInvokable finalInvokable) throws Exception {
     runWithSystemExitMonitoring(() -> finalInvokable.cleanUp(null));
 }
 ```
+
+Task重启策略主要分为三种类型:固定延时重启(fixed- delay)、按失败率重启(failure-rate)以及无重启(none)。
+
+·固定延时重启:按照restart-strategy.fixed-delay.delay参数给出的固 定间隔重启Job，如果重启次数达到fixed-delay.attempt配置值仍没有重启 成功，则停止重启。
+
+·按失败率重启:按照restart-strategy.failure-rate.delay参数给出的固 定间隔重启Job，如果重启次数在failure-rate-interval参数规定的时间周期 内到达max-failures-per-interval配置的阈值仍没有成功，则停止重启。
+
+·无重启:如果Job出现意外停止，则直接重启失败不再重启。
+
+Flink中通过RestartStrategy接口表示 ExecutionGraph重启的策略配置，RestartStrategy接口主要实现类有 NoRestartStrategy、FailureRateRestartStrategy以及 FixeddelayRestartStrategy
+
+RestartStrategy是通过 RestartStrategyFactory创建的，在RestartStrategyFactory基本实 现类中提供了创建RestartStrategy的抽象方法并通过子类实现。
+
+需要注意的是， NoOrFixedIfCheckpointingEnabledRestartStrategyFactory会根据 Checkpoint是否开启，选择创建FixeddelayRestartStrategy还是 NoRestartStrategy。
