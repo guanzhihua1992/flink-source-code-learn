@@ -8,21 +8,21 @@ public static void main(String[] args) {
             LOG, YarnSessionClusterEntrypoint.class.getSimpleName(), args);
     SignalHandler.register(LOG);
     JvmShutdownSafeguard.installAsShutdownHook(LOG);
-
+// 获取系统环境变量
     Map<String, String> env = System.getenv();
-
+// 获取工作路径
     final String workingDirectory = env.get(ApplicationConstants.Environment.PWD.key());
     Preconditions.checkArgument(
             workingDirectory != null,
             "Working directory variable (%s) not set",
             ApplicationConstants.Environment.PWD.key());
 
-    try {
+    try {// 加载Yarn需要的环境信息
         YarnEntrypointUtils.logYarnEnvironmentInformation(env, LOG);
     } catch (IOException e) {
         LOG.warn("Could not log YARN environment information.", e);
     }
-
+// 创建加载Configuration配置
     final Configuration dynamicParameters =
             ClusterEntrypointUtils.parseParametersOrExit(
                     args,
@@ -30,10 +30,10 @@ public static void main(String[] args) {
                     YarnSessionClusterEntrypoint.class);
     final Configuration configuration =
             YarnEntrypointUtils.loadConfiguration(workingDirectory, dynamicParameters, env);
-
+// 创建YarnSessionClusterEntrypoint对象
     YarnSessionClusterEntrypoint yarnSessionClusterEntrypoint =
             new YarnSessionClusterEntrypoint(configuration);
-
+// 通过ClusterEntrypoint执行yarnSessionClusterEntrypoint
     ClusterEntrypoint.runClusterEntrypoint(yarnSessionClusterEntrypoint);
 }
 ```
@@ -68,5 +68,31 @@ public static void installAsShutdownHook(Logger logger, long delayMillis) {
     Thread shutdownHook = new JvmShutdownSafeguard(delayMillis);
     ShutdownHookUtil.addShutdownHookThread(
             shutdownHook, JvmShutdownSafeguard.class.getSimpleName(), logger);
+}
+```
+
+在YarnSessionClusterEntrypoint中实现了 createDispatcherResourceManagerComponentFactory()方法，在该方 法中将YarnResourceManagerFactory实例作为参数传递给 DispatcherResourceManagerComponentFactory，然后通过 DispatcherResourceManagerComponentFactory创建Yarn Session集群 中的组件和服务。在YarnSessionClusterEntrypoint的启动过程中获取YarnResourceManager的工厂类，通过YarnResourceManagerFactory 创建YarnResourceManager实例。
+
+YarnSessionClusterEntrypoint.createDispatcherResourceManagerComponentFactory
+
+```java
+@Override
+protected DispatcherResourceManagerComponentFactory
+        createDispatcherResourceManagerComponentFactory(Configuration configuration) {
+    return DefaultDispatcherResourceManagerComponentFactory.createSessionComponentFactory(
+            YarnResourceManagerFactory.getInstance());
+}
+```
+
+DefaultDispatcherResourceManagerComponentFactory.createSessionComponentFactory
+
+```java
+public static DefaultDispatcherResourceManagerComponentFactory createSessionComponentFactory(
+        ResourceManagerFactory<?> resourceManagerFactory) {
+    return new DefaultDispatcherResourceManagerComponentFactory(
+            DefaultDispatcherRunnerFactory.createSessionRunner(
+                    SessionDispatcherFactory.INSTANCE),
+            resourceManagerFactory,
+            SessionRestEndpointFactory.INSTANCE);
 }
 ```
