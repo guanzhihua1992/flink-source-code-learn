@@ -1,0 +1,1 @@
+Dispatcher主要负责接收客户端提交的JobGraph对象，例如CLI客 户端或Flink Web UI提交的任务最终都会发送至Dispatcher组件，由 Dispatcher组件对JobGraph进行分发和执行，其中就包含根据 JobGraph对象启动JobManager服务，专门用于管理整个任务的生命周 期。
