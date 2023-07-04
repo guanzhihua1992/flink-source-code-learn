@@ -1,0 +1,1 @@
+ResourceManager主要负责管理Flink集群中的计算资源，其中计 算资源主要来自TaskManager组件。ResourceManager主要接收来自 JobManager的SlotRequest。如果集群采用Native模式部署，则 ResourceManager会动态地向集群资源管理器申请Container并启动 TaskManager，例如Hadoop Yarn、Kubernetes等。对于不同的集群资 源管理器，ResourceManager的实现也会有所不同。

@@ -1,0 +1,1 @@
+TaskManager负责向整个集群提供Slot计算资源，同时管理了 JobManager提交的Task任务。TaskManager会向JobManager服务提供从 ResourceManager中申请和分配的Slot计算资源，JobManager最终会根 据分配到的Slot计算资源将Task提交到TaskManager上运行。

@@ -1,0 +1,21 @@
+·用户通过客户端命令启动Session Cluster，此时会触发整个集群 服务的启动过程，客户端会向集群资源管理器申请Container计算资源以 启动运行时中的管理节点。
+
+·ClusterManagement会为运行时集群分配Application主节点需要的 资源并启动主节点服务，例如在Hadoop Yarn资源管理器中会分配并启 动Flink管理节点对应的Container。
+
+·客户端将用户提交的应用程序代码经过本地运行生成JobGraph结 构，然后通过ClusterClient将JobGraph提交到集群运行时中运行。
+
+·此时集群运行时中的Dispatcher服务会接收到ClusterClient提交的 JobGraph对象，然后根据JobGraph启动JobManager RPC服务。 JobManager是每个提交的作业都会单独创建的作业管理服务，生命周期 和整个作业的生命周期一致。
+
+·当JobManager RPC服务启动后，下一步就是根据JobGraph配置的 计算资源向ResourceManager服务申请运行Task实例需要的Slot计算资 源。
+
+·此时ResourceManager接收到JobManager提交的资源申请后，先判 断集群中是否有足够的Slot资源满足作业的资源申请，如果有则直接向 JobManager分配计算资源，如果没有则动态地向外部集群资源管理器申 请启动额外的Container以提供Slot计算资源。
+
+·如果在集群资源管理器(例如Hadoop Yarn)中有足够的 Container计算资源，就会根据ResourceManager的命令启动指定的 TaskManager实例。
+
+·TaskManager启动后会主动向ResourceManager注册Slot信息，即其 自身能提供的全部Slot资源。ResourceManager接收到TaskManager中的 Slot计算资源时，就会立即向该TaskManager发送Slot资源申请，为 JobManager服务分配提交任务所需的Slot计算资源。
+
+·当TaskManager接收到ResourceManager的资源分配请求后， TaskManager会对符合申请条件的SlotRequest进行处理，然后立即向 JobManager提供Slot资源。
+
+·此时JobManager会接收到来自TaskManager的offerslots消息，接下 来会向Slot所在的TaskManager申请提交Task实例。TaskManager接收到来 自JobManager的Task启动申请后，会在已经分配的Slot卡槽中启动Task 线程。
+
+·TaskManager中启动的Task线程会周期性地向JobManager汇报任务 运行状态，直到完成整个任务运行。
